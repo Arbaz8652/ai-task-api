@@ -1,0 +1,8 @@
+export enum Topic {
+  BACKEND = 'BACKEND',
+  FRONTEND = 'FRONTEND',
+  DATABASE = 'DATABASE',
+  DEVOPS = 'DEVOPS',
+  PERSONAL = 'PERSONAL',
+}
+
