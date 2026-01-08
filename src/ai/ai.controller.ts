@@ -1,8 +1,10 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UnprocessableEntityException } from "@nestjs/common";
 import { AiService } from "./ai.service";
 import { TasksService } from "src/tasks/tasks.service";
 import { ActionType } from "src/enum/action-type.enum";
 import { validateAiCommand } from "./ai.validator";
+import { Priority } from "src/enum/priority.enum";
+import { ProcessCommandDto } from "./dto/process-command-dto";
 
 @Controller('api/ai')
 export class AiController {
@@ -12,9 +14,11 @@ export class AiController {
     ) { }
 
     @Post('command')
-    async handleCommand(@Body('message') message: string) {
-        const command = await this.aiService.parseCommand(message);
+    async handleCommand(@Body() processCommandDto: ProcessCommandDto) {
+        const payload = Object.assign({}, processCommandDto);
 
+        const command = await this.aiService.parseCommand(payload.message);
+        console.log(command)
         validateAiCommand(command);
 
         switch (command.action) {
@@ -22,7 +26,7 @@ export class AiController {
                 return this.tasksService.createTask({
                     title: command.payload.title,
                     topic: command.payload.topic,
-                    priority: command.payload.priority,
+                    priority: command.payload.priority || Priority.MEDIUM,
                     dueDate: command.payload.due_date ?? null,
                 });
 
@@ -45,10 +49,9 @@ export class AiController {
                 return this.tasksService.listTasks(command.payload);
 
             case ActionType.INVALID_COMMAND:
-                return {
-                    error: 'INVALID_COMMAND',
-                    reason: command.payload.reason,
-                };
+                throw new UnprocessableEntityException(
+                    'The command could not be processed.',
+                );
         }
     }
 }

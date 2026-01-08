@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module';
@@ -6,13 +6,18 @@ import { TasksModule } from './tasks/tasks.module';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { TasksController } from './tasks/tasks.controller';
-import { TasksService } from './tasks/tasks.service';
+import { LoggerMiddleware } from './middlware/request-logger';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
     AiModule, TasksModule, DatabaseModule],
   controllers: [AppController, TasksController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+  }
+}

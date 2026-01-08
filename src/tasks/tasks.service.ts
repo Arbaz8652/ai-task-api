@@ -3,17 +3,17 @@ import { Status } from "src/enum/status.enum";
 import { Topic } from "src/enum/topic.enum";
 import { Task } from "./task.entity";
 import { TasksRepository } from "./tasks.repository";
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 
 @Injectable()
 export class TasksService {
     constructor(private readonly taskRepo: TasksRepository) { }
 
-    createTask(taskData: Partial<Task>): Promise<Task> {
+    async createTask(taskData: Partial<Task>): Promise<Task> {
         return this.taskRepo.create(taskData);
     }
 
-    listTasks(filters?: {
+    async listTasks(filters?: {
         status?: string;
         topic?: Topic;
         priority?: Priority;
@@ -21,26 +21,47 @@ export class TasksService {
         return this.taskRepo.findAll(filters);
     }
 
-    updateTask(
+    async updateTask(
         taskId: string,
         updates: Partial<Pick<Task, 'title' | 'topic' | 'priority' | 'dueDate'>>,
     ) {
         return this.taskRepo.update(taskId, updates);
     }
 
-    markTaskComplete(taskId: string): Promise<Task> {
+    async markTaskComplete(taskId: string): Promise<Task> {
         return this.taskRepo.markComplete(taskId);
     }
 
-    deleteTask(taskId: string): Promise<void> {
+    async deleteTask(taskId: string): Promise<void> {
         return this.taskRepo.delete(taskId);
     }
 
     /**
      * Used ONLY by AI command resolver later
      */
-    resolveTaskByIdentifier(identifier: string): Promise<Task> {
-        return this.taskRepo.findByTitleKeyword(identifier);
+
+    async resolveTaskByIdentifier(identifier: string) {
+        const matches = await this.taskRepo.findByTitleKeywordStrict(identifier);
+
+        if (matches.length === 0) {
+            throw new BadRequestException(
+                `No task found matching "${identifier}"`,
+            );
+        }
+
+        if (matches.length > 1) {
+            throw new BadRequestException({
+                error: 'AMBIGUOUS_TASK',
+                message: 'Multiple tasks match your request',
+                candidates: matches.map(t => ({
+                    id: t.id,
+                    title: t.title,
+                    status: t.status,
+                })),
+            });
+        }
+
+        return matches[0];
     }
 
 }

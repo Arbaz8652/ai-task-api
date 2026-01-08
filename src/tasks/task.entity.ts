@@ -33,14 +33,16 @@ export class Task {
     type: 'enum',
     enum: Priority,
     default: Priority.MEDIUM,
+    nullable: true,
   })
-  priority: Priority;
+  priority?: Priority;
 
   @Index()
   @Column({
     type: 'enum',
     enum: Status,
     default: Status.TODO,
+    nullable: true
   })
   status: Status;
 
@@ -48,7 +50,7 @@ export class Task {
   @Column({ type: 'date', nullable: true })
   dueDate: string | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp'})
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })

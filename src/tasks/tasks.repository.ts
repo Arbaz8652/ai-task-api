@@ -54,7 +54,7 @@ export class TasksRepository {
 
     async update(id: string, updates: Partial<Task>): Promise<Task> {
         const task = await this.findById(id);
-        if(!task){
+        if (!task) {
             throw new NotFoundException('Task not found');
         }
         Object.assign(task, updates);
@@ -71,5 +71,13 @@ export class TasksRepository {
             throw new NotFoundException('Task not found');
         }
     }
+
+    async findByTitleKeywordStrict(keyword: string): Promise<Task[]> {
+        return this.repo.find({
+            where: { title: ILike(`%${keyword}%`) },
+            order: { createdAt: 'DESC' },
+        });
+    }
+
 
 }
